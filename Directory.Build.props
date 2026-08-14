@@ -1,0 +1,30 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>Recommended</AnalysisMode>
+
+    <NuGetAuditLevel>moderate</NuGetAuditLevel>
+
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+
+    <NoWarn>
+      CA1000;
+      CA1707;
+      CA1711;
+      CA1716;
+      CA1812;
+      CA1848;
+      CA1852;
+      CA1860;
+      IDE0058;
+      NU1507
+    </NoWarn>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,9 @@
+
+x-version: 0.0.11
+
+services:
+  vfz.cxo.migrationtool.application:
+    image: ${DOCKER_REGISTRY-}vfzcxomigrationtoolapplication
+    build:
+      context: .
+      dockerfile: src/VFZ.CxO.MigrationTool.Application/Dockerfile
