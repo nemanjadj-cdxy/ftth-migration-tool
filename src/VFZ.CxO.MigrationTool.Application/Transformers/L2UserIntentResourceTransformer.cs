@@ -1,7 +1,7 @@
 using TmfApiClients.ResourceInventoryManagement.v4;
 using VFZ.CxO.FTTH.Domain.Models.Resources;
-using CatalogResourceSpecification = TmfApiClients.ResourceCatalogManagement.v4.ResourceSpecification;
 using VFZ.CxO.MigrationTool.Application.Models.Neo;
+using CatalogResourceSpecification = TmfApiClients.ResourceCatalogManagement.v4.ResourceSpecification;
 
 namespace VFZ.CxO.MigrationTool.Application.Transformers;
 
@@ -28,6 +28,9 @@ public static class L2UserIntentResourceTransformer
                 Version = specification.Version,
                 ReferredType = "LogicalResourceSpecification",
             },
+            ResourceStatus = string.IsNullOrEmpty(fiberName)
+                ? ResourceStatusType.Reserved
+                : ResourceStatusType.Available,
         };
 
         var proxy = resource.ToEntityProxy<ROMFTTHL2UserIntentEntityProxy>(specification);
@@ -35,7 +38,9 @@ public static class L2UserIntentResourceTransformer
         proxy.SpeedProfile = xgspon.GetCharacteristic("speedProfile") ?? "";
         proxy.InternetStatus = xgspon.GetCharacteristic("internetStatus") ?? "normal";
         proxy.IsFoc = xgspon.GetCharacteristic("isFoc") ?? "no";
-        proxy.ProvisioningState = string.IsNullOrEmpty(fiberName) ? "preprovisioned" : "provisioned";
+        proxy.ProvisioningState = string.IsNullOrEmpty(fiberName)
+            ? "preprovisioned"
+            : "provisioned";
         proxy.Operation = "\"\"";
         proxy.ApplyDefaultCharacteristicValues();
 

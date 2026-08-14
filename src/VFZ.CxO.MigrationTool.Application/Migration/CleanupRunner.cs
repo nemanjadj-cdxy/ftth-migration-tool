@@ -17,10 +17,10 @@ public sealed record CleanupSummary(
 );
 
 // Pages through the XGSPON service + its 3 resource specifications and deletes them via the TMF clients.
-public class XgsponCleanupRunner(
+public class CleanupRunner(
     IServiceInventoryManagement4ApiClient serviceClient,
     IResourceInventoryManagement4ApiClient resourceClient,
-    ILogger<XgsponCleanupRunner> logger
+    ILogger<CleanupRunner> logger
 )
 {
     private static readonly string[] ResourceSpecificationIds =
@@ -28,6 +28,13 @@ public class XgsponCleanupRunner(
         ROMFTTHOntIntent.Id,
         ROMFTTHL2UserIntent.Id,
         ROMFTTHSubscriber.Id,
+    ];
+
+    private static readonly string[] ServiceSpecificationIds =
+    [
+        NaaSSVCXGSPON.Id,
+        NaaSSvcL2FTTHOffNet.Id,
+        NAASSvcL3Internet.Id,
     ];
 
     public async Task<CleanupSummary> RunAsync(
@@ -80,7 +87,7 @@ public class XgsponCleanupRunner(
             var page = await serviceClient.ListServicesAsync(
                 new ListServicesQueryParams
                 {
-                    ServiceSpecificationIds = [NaaSSVCXGSPON.Id],
+                    ServiceSpecificationIds = ServiceSpecificationIds,
                     Limit = batchSize,
                     Offset = offset,
                     Fields = ["id"],

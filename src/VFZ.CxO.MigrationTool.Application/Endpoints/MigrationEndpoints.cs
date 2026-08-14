@@ -21,7 +21,9 @@ public static class MigrationEndpoints
                     CancellationToken cancellationToken
                 ) =>
                 {
-                    var file = request.HasFormContentType ? (await request.ReadFormAsync(cancellationToken)).Files["file"] : null;
+                    var file = request.HasFormContentType
+                        ? (await request.ReadFormAsync(cancellationToken)).Files["file"]
+                        : null;
 
                     if (file is null && string.IsNullOrWhiteSpace(sourcePath))
                     {
@@ -35,7 +37,10 @@ public static class MigrationEndpoints
 
                     if (file is not null)
                     {
-                        tempFile = Path.Combine(Path.GetTempPath(), $"neo-xgspon-{Guid.NewGuid():N}.json");
+                        tempFile = Path.Combine(
+                            Path.GetTempPath(),
+                            $"neo-xgspon-{Guid.NewGuid():N}.json"
+                        );
                         await using var stream = File.Create(tempFile);
                         await file.CopyToAsync(stream, cancellationToken);
                         path = tempFile;
@@ -64,9 +69,149 @@ public static class MigrationEndpoints
                     }
                 }
             )
-            .WithName("ImportXgsponExport")
-            .WithSummary(
-                "Imports a NEO XGSPON export file (upload or server-local path) and bulk imports the resulting service + resources into CxO."
+            .Produces<MigrationSummary>()
+            .DisableAntiforgery();
+
+        group
+            .MapPost(
+                "/l2offnet/import",
+                async (
+                    HttpRequest request,
+                    [FromQuery] string? sourcePath,
+                    [FromQuery] bool? dryRun,
+                    L2OffNetMigrationRunner runner,
+                    CancellationToken cancellationToken
+                ) =>
+                {
+                    var file = request.HasFormContentType
+                        ? (await request.ReadFormAsync(cancellationToken)).Files["file"]
+                        : null;
+
+                    if (file is null && string.IsNullOrWhiteSpace(sourcePath))
+                    {
+                        return Results.BadRequest(
+                            "Provide either a 'file' upload (multipart/form-data) or a 'sourcePath' query parameter."
+                        );
+                    }
+
+                    string? tempFile = null;
+                    string path;
+
+                    if (file is not null)
+                    {
+                        tempFile = Path.Combine(
+                            Path.GetTempPath(),
+                            $"neo-l2offnet-{Guid.NewGuid():N}.json"
+                        );
+                        await using var stream = File.Create(tempFile);
+                        await file.CopyToAsync(stream, cancellationToken);
+                        path = tempFile;
+                    }
+                    else
+                    {
+                        path = sourcePath!;
+                    }
+
+                    if (!File.Exists(path))
+                    {
+                        return Results.NotFound($"Source file not found: {path}");
+                    }
+
+                    try
+                    {
+                        var summary = await runner.RunAsync(path, dryRun, cancellationToken);
+                        return Results.Ok(summary);
+                    }
+                    finally
+                    {
+                        if (tempFile is not null)
+                        {
+                            File.Delete(tempFile);
+                        }
+                    }
+                }
+            )
+            .Produces<MigrationSummary>()
+            .DisableAntiforgery();
+
+        group
+            .MapPost(
+                "/l3internet/import",
+                async (
+                    HttpRequest request,
+                    [FromQuery] string? sourcePath,
+                    [FromQuery] string? l2OffNetSourcePath,
+                    [FromQuery] bool? dryRun,
+                    L3InternetMigrationRunner runner,
+                    CancellationToken cancellationToken
+                ) =>
+                {
+                    var file = request.HasFormContentType
+                        ? (await request.ReadFormAsync(cancellationToken)).Files["file"]
+                        : null;
+
+                    if (file is null && string.IsNullOrWhiteSpace(sourcePath))
+                    {
+                        return Results.BadRequest(
+                            "Provide either a 'file' upload (multipart/form-data) or a 'sourcePath' query parameter for the L3Internet export."
+                        );
+                    }
+
+                    if (string.IsNullOrWhiteSpace(l2OffNetSourcePath))
+                    {
+                        return Results.BadRequest(
+                            "Provide the 'l2OffNetSourcePath' query parameter - the L2FTTHOffNet export used to look up networkOwner/userId."
+                        );
+                    }
+
+                    if (!File.Exists(l2OffNetSourcePath))
+                    {
+                        return Results.NotFound(
+                            $"L2FTTHOffNet lookup file not found: {l2OffNetSourcePath}"
+                        );
+                    }
+
+                    string? tempFile = null;
+                    string path;
+
+                    if (file is not null)
+                    {
+                        tempFile = Path.Combine(
+                            Path.GetTempPath(),
+                            $"neo-l3internet-{Guid.NewGuid():N}.json"
+                        );
+                        await using var stream = File.Create(tempFile);
+                        await file.CopyToAsync(stream, cancellationToken);
+                        path = tempFile;
+                    }
+                    else
+                    {
+                        path = sourcePath!;
+                    }
+
+                    if (!File.Exists(path))
+                    {
+                        return Results.NotFound($"Source file not found: {path}");
+                    }
+
+                    try
+                    {
+                        var summary = await runner.RunAsync(
+                            path,
+                            l2OffNetSourcePath,
+                            dryRun,
+                            cancellationToken
+                        );
+                        return Results.Ok(summary);
+                    }
+                    finally
+                    {
+                        if (tempFile is not null)
+                        {
+                            File.Delete(tempFile);
+                        }
+                    }
+                }
             )
             .Produces<MigrationSummary>()
             .DisableAntiforgery();
@@ -78,7 +223,7 @@ public static class MigrationEndpoints
                     [FromQuery] int? batchSize,
                     [FromQuery] int? maxConcurrency,
                     [FromQuery] bool? dryRun,
-                    XgsponCleanupRunner runner,
+                    CleanupRunner runner,
                     CancellationToken cancellationToken
                 ) =>
                 {
@@ -91,10 +236,6 @@ public static class MigrationEndpoints
                     );
                     return Results.Ok(summary);
                 }
-            )
-            .WithName("CleanupXgsponInventory")
-            .WithSummary(
-                "Pages through the XGSPON service and its 3 resources in the CxO inventory and deletes them (dry run by default)."
             )
             .Produces<CleanupSummary>();
 

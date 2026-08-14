@@ -59,7 +59,7 @@ public static class XgsponServiceTransformer
         proxy.IsFoc = source.GetCharacteristic("isFoc") ?? "no";
         proxy.Operation = source.GetCharacteristic("operation") ?? "\"\"";
         proxy.RegId = source.GetCharacteristic("regId") ?? "";
-        proxy.SourceSystem = "HansenProv";
+        proxy.SourceSystem = SourceSystemMapper.Normalize(source.GetCharacteristic("sourceSystem"));
         proxy.SpeedProfile = source.GetCharacteristic("speedProfile") ?? "";
         proxy.TenantId = source.GetCharacteristic("tenantId") ?? "";
 

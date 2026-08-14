@@ -14,14 +14,20 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration
     )
     {
-        services.AddOptions<MigrationOptions>().Bind(configuration.GetSection(MigrationOptions.SectionKey));
+        services
+            .AddOptions<MigrationOptions>()
+            .Bind(configuration.GetSection(MigrationOptions.SectionKey));
 
         services.AddTmfApiClients(configuration);
 
         services.AddSingleton<NeoJsonLoader>();
         services.AddSingleton<XgsponSpecificationProvider>();
         services.AddSingleton<XgsponMigrationRunner>();
-        services.AddSingleton<XgsponCleanupRunner>();
+        services.AddSingleton<CleanupRunner>();
+        services.AddSingleton<L2OffNetSpecificationProvider>();
+        services.AddSingleton<L2OffNetMigrationRunner>();
+        services.AddSingleton<L3InternetSpecificationProvider>();
+        services.AddSingleton<L3InternetMigrationRunner>();
 
         return services;
     }
